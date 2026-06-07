@@ -16,9 +16,12 @@
 
 ## 与原版的区别
 
-本版本在 [kaimomo99/video-notes](https://clawhub.ai/kaimomo99/video-notes) 的基础上增加了：
+本版本在 [kaimomo99/video-notes](https://clawhub.ai/kaimomo99/video-notes) 的基础上调整了：
+1、默认跳过关键帧的采集（节约约56%的token）
+2、优化了字幕采集与注入（节约约8%的token）
+3、md文件的生成，方便obsidian等知识库的集成
 
-| 增强 | 说明 |
+| 调整 | 说明 |
 |------|------|
 | 🎙️ **小宇宙 FM 支持** | 从 show notes 提取结构化笔记，无需音频下载 |
 | 🎤 **Whisper 转录回退** | B 站无字幕视频自动用 Whisper 转录 + 繁→简转换 |
@@ -29,11 +32,7 @@
 
 ## 使用方式
 
-在 Claude Code / Hermes Agent 中说：
-
-```
-帮我给这个视频做笔记 https://youtube.com/watch?v=...
-```
+直接把youtube、bilibili的视频扔给你的Agent既可。
 
 ## 依赖
 
