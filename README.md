@@ -32,7 +32,7 @@
 
 ## 使用方式
 
-直接把youtube、bilibili的视频扔给你的Agent既可。
+直接把youtube、bilibili的视频链接扔给你的Agent既可（实测手机短链也可以）。
 
 ## 依赖
 
