@@ -6,7 +6,7 @@
 
 ## 效果预览
 
-输入：YouTube / Bilibili / 小宇宙 FM 链接
+输入：YouTube / Bilibili / 小红书 / 小宇宙 FM 链接
 输出：自包含的 HTML 文档 + Obsidian Markdown，包含：
 
 - **核心论点总结**（~300 字）：一句话主张 + 主线论据 + 关键预言
