@@ -1,18 +1,20 @@
 {
   "name": "video-notes",
   "slug": "video-notes",
-  "version": "1.6.0",
-  "author": "princyzhang",
-  "description": "把 YouTube / Bilibili 视频 / 小宇宙播客变成精美的结构化笔记。自动提取字幕（或 Whisper 转录）、生成核心论点总结和 SVG 图表，输出 HTML + Obsidian Markdown。Forked from kaimomo99/video-notes.",
+  "version": "2.0.2",
+  "author": "2992638402-art",
+  "description": "Convert YouTube / Bilibili / Xiaoyuzhou FM / Xiaohongshu content into polished HTML + Obsidian Markdown notes. Auto-extract subtitles, Whisper transcription, show notes, __INITIAL_STATE__ JSON. Unified output to Obsidian vault. Supports xhslink.com short links + image OCR via PP-OCRv5.",
   "tags": [
     "youtube",
     "bilibili",
-    "podcast",
+    "xiaoyuzhou",
+    "xiaohongshu",
     "notes",
     "summarization",
     "video",
+    "podcast",
     "productivity",
-    "whisper"
+    "ocr"
   ],
   "license": "MIT",
   "requirements": {
@@ -28,9 +30,5 @@
     "inject_subs": "scripts/inject_subs.py",
     "html_to_obsidian": "scripts/html_to_obsidian.py",
     "whisper_parallel": "scripts/whisper_parallel.py"
-  },
-  "upstream": {
-    "name": "kaimomo99/video-notes",
-    "url": "https://clawhub.ai/kaimomo99/video-notes"
   }
 }

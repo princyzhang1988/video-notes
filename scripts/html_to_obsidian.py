@@ -6,7 +6,7 @@ Usage:
     python3 html_to_obsidian.py <input.html> [--title "Original YouTube Title"] [--output <path>]
 
 If --title is not provided, fetches the original YouTube title via yt-dlp.
-If --vault and --subfolder are provided, saves to that location.
+Saves to Obsidian vault under 知识库/30.Resources/视频/ by default.
 Requires: html2text, beautifulsoup4
 """
 
@@ -19,9 +19,12 @@ import subprocess
 import html2text
 from bs4 import BeautifulSoup
 
-# ── Default paths (customize for your environment) ──
-DEFAULT_VAULT = os.path.expanduser("~/Documents/ObsidianVault")
-DEFAULT_SUBFOLDER = "Resources/Videos"
+
+# ── Obsidian vault paths ──
+DEFAULT_VAULT = os.path.expanduser(
+    "~/Library/Mobile Documents/iCloud~md~obsidian/Documents/知识太空舱"
+)
+DEFAULT_SUBFOLDER = "知识库/30.Resources/视频"
 
 
 def ensure_deps():
@@ -247,7 +250,7 @@ def build_markdown(sections: dict, yt_title: str = "") -> str:
 
     # Footer
     lines.append("---")
-    lines.append(f"*由 [video-notes](https://github.com/princyzhang/video-notes) 自动生成*")
+    lines.append(f"*由 [video-notes](https://github.com/2992638402-art/video-notes) 自动生成*")
     lines.append("")
 
     return "\n".join(lines)
@@ -261,7 +264,7 @@ def main():
     parser.add_argument("--output", "-o", help="Output Markdown file path")
     parser.add_argument("--title", "-t", help="Original YouTube video title (auto-fetched if omitted)")
     parser.add_argument("--vault", default=DEFAULT_VAULT,
-                        help="Obsidian vault path (default: ~/Documents/ObsidianVault)")
+                        help=f"Obsidian vault path")
     parser.add_argument("--subfolder", default=DEFAULT_SUBFOLDER,
                         help=f"Subfolder within vault (default: {DEFAULT_SUBFOLDER})")
     args = parser.parse_args()
