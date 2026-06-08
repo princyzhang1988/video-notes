@@ -2,7 +2,7 @@
 
 > **Forked from [kaimomo99/video-notes](https://clawhub.ai/kaimomo99/video-notes)** — 感谢原作者的优秀工作！
 
-把 YouTube / Bilibili 视频 / 小宇宙播客变成精美的结构化笔记。粘贴一个链接，几分钟后你会得到一份带图表和逐字稿的精美文档。
+把 YouTube / Bilibili 视频 / 小红书 / 小宇宙播客变成精美的结构化笔记。粘贴一个链接，几分钟后你会得到一份带图表和逐字稿的精美文档。
 
 ## 效果预览
 
