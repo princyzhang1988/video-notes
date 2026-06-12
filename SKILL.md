@@ -1,9 +1,9 @@
 ---
 name: video-notes
 slug: video-notes
-version: 2.0.2
+version: 2.1.0
 author: 2992638402-art
-description: 把 YouTube / Bilibili / 小宇宙播客 / 小红书帖子变成精美的结构化笔记。自动提取内容（字幕 / Whisper 转录 / show notes / __INITIAL_STATE__ JSON）、生成核心论点总结和 SVG 图表，输出 HTML + Obsidian Markdown。统一存入知识库/30.Resources/视频/。当用户提供 YouTube、Bilibili、小宇宙 FM 或小红书链接需要记笔记时使用。
+description: 把 YouTube / Bilibili / 小宇宙播客 / 小红书帖子 / 微信公众号文章变成精美的结构化笔记。自动提取内容（字幕 / Whisper 转录 / show notes / __INITIAL_STATE__ JSON）、生成核心论点总结和 SVG 图表，输出 HTML + Obsidian Markdown。统一存入知识库/30.Resources/。当用户提供 YouTube、Bilibili、小宇宙 FM、小红书或微信公众号链接需要记笔记时使用。
 ---
 
 # Video Notes Skill
@@ -31,6 +31,7 @@ Convert YouTube / Bilibili / Xiaoyuzhou FM / Xiaohongshu content into polished, 
 | `bilibili.com/video` 或 `b23.tv` | Bilibili | → Bilibili Workflow |
 | `xiaoyuzhoufm.com` | 小宇宙 FM | → Xiaoyuzhou FM Workflow |
 | `xiaohongshu.com` 或 `xhslink.com` | 小红书 | → Xiaohongshu Workflow |
+| `mp.weixin.qq.com` | 微信公众号 | → WeChat Article Workflow |
 
 **所有平台最终产物一致：HTML + Obsidian Markdown，存入 `知识库/30.Resources/视频/`。**
 
@@ -676,9 +677,9 @@ note['_ocr_text'] = full_text  # 用于后续整理
 
 ### Step S2：视频帖子 — 转录（仅 type == 'video'）
 
-仅当 `note['type'] == 'video'` 时执行。提取视频 → 下载 → ffmpeg 转音频 → Whisper 转录。
+仅当 `note['type'] == 'video'` 时执行。**先快速检查字幕可用性**：`media.get('mediaV2')` 存在 → 解析其 JSON 中的 `subtitles` → 有 zh-CN SRT URL → 直接下载 SRT。**试一次，不存在就立即 fallback**（不要反复搜索，见 Pitfall E25）。
 
-**转录方案（按优先级）**：
+转录方案（按优先级）：
 
 1. **首选 `mlx_whisper`**（MLX 优化，Mac M 系列最快）：
 
@@ -826,6 +827,119 @@ open /tmp/xhs_{post_id}.html
 - 知识/科普类 → 关键知识点 + 结构化笔记
 - 总览（无参数）→ 主题分布 + 高频标签 + 推荐深入整理的方向
 
+## WeChat Article (微信公众号) Workflow
+
+微信公众号文章没有视频/音频，但图文内容质量高。核心挑战：**微信对图片 URL 做了 JS 加密混淆**，静态 HTML 中的 `data-src` 是 JS 拼接字符串（`').concat(r,'`），curl 直接抓取会丢失所有配图。
+
+### Step W0：前置知识
+
+- 微信文章图片的 `data-src` 在静态 HTML 中不可直接使用——只有浏览器执行 JS 后 `src` 属性才会暴露真实 `mmbiz.qpic.cn` URL
+- 文章可能有 0–15+ 张配图，必须全部保留
+- 用户可选择是否同时生成 ProcessOn 脑图
+
+### Step W1：提取内容（必须用浏览器）
+
+```bash
+# 用移动端微信 UA 打开文章
+browser_navigate(url="https://mp.weixin.qq.com/s/...")
+```
+
+等页面渲染完成后，用 `browser_console` 提取：
+
+```javascript
+// 1. 提取标题
+document.querySelector('#activity-name')?.innerText
+
+// 2. 提取作者/公众号名
+document.querySelector('#js_name')?.innerText
+
+// 3. 提取正文（含图片位置）
+document.querySelector('#js_content')?.innerText
+
+// 4. 提取所有内容图片的真实 URL
+Array.from(document.querySelectorAll('img[src*="mmbiz.qpic.cn"]'))
+  .map(i => i.src)
+  .filter(u => !u.includes('qlogo'))  // 排除头像
+```
+
+**关键点**：
+- 只用浏览器渲染后的页面，不要用 curl 抓静态 HTML
+- 正文文本从 `browser_snapshot` 获取即可
+- 图片 URL 必须从 `browser_console` 提取（DOM 中的 `src` 属性）
+
+### Step W2：下载图片
+
+```python
+import urllib.request, ssl, os
+
+ctx = ssl.create_default_context()
+for i, url in enumerate(unique_img_urls):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    data = urllib.request.urlopen(req, timeout=15, context=ctx).read()
+    with open(f"/tmp/weixin-imgs/{i:02d}.png", 'wb') as f:
+        f.write(data)
+```
+
+- 去重方式：按 URL 路径中的 hash ID 去重（`url.split('/')[-2]`）
+- 图片格式统一保存为 `.png`（微信 CDN 默认输出 PNG）
+
+### Step W3：生成 Obsidian Markdown
+
+文章笔记存入 `知识库/30.Resources/文章/`，图片存入同目录 `assets/` 子文件夹。
+
+```markdown
+# 文章标题
+
+> 来源：公众号「XXX」 | 原文链接：URL
+
+---
+
+## 🧠 脑图总览（如用户要求生成）
+
+![[../30.Resources/文章/assets/xxx-脑图.png]]
+
+---
+
+## 📄 原文
+
+[全文逐字保留]
+
+---
+
+## 🖼️ 原文配图
+
+![[../30.Resources/文章/assets/article-img-01.png]]
+
+...
+
+---
+
+## 📌 一句话
+
+[核心观点的精炼总结]
+```
+
+**保存路径**：
+- MD：`知识库/30.Resources/文章/<文章标题>.md`
+- 图片：`知识库/30.Resources/文章/assets/<文章标题>-img-NN.png`
+- 脑图（可选）：`知识库/30.Resources/文章/assets/<文章标题>-脑图.png`
+
+### Step W4（可选）：生成 ProcessOn 脑图
+
+如果用户要求生成脑图，使用 `processon-mindmap-generator` skill：
+1. 按 skill 规范做云端版本检查
+2. 从文章提炼结构化大纲
+3. 调用 `processon_mindmap_client.py` 生成脑图
+4. 下载图片到 assets 目录
+5. 在 MD 中嵌入 wikilink
+
+### WeChat-Specific Notes
+
+- **图片是最大坑**：静态 HTML 里 `data-src` 不可用，必须浏览器渲染后提取
+- **文章无原始标题标签**：`<title>` 被 JS 动态设置，从 `#activity-name` 获取
+- **无需视频/音频处理**：没有 Whisper、yt-dlp、ffmpeg 依赖
+- **可结合 ProcessOn**：文章适合生成结构化脑图
+
 ## Quality Guidelines
 
 - **Summary is mandatory** — always write the executive summary; it's the first thing readers see.
@@ -877,3 +991,5 @@ These issues were discovered during real-world testing and are now resolved in t
 | E22 | XHS 图片 OCR 首张超时（PP-OCRv5 子进程模式） | 不要用 subprocess.run() 每张图起新 Python。改用单一进程：加载 PaddleOCR 一次，循环调用 `predict()`。见 `paddleocr-local` skill 的批量模式。 |
 | E23 | `ocr.ocr()` 废弃 → 结果为 OCRResult dict，非旧嵌套列表 | paddleocr >= 3.6 弃用 `ocr()`。用 `predict()`。结果通过 `r[0].get('rec_texts', [])` 访问，不是 `result[0]` 嵌套列表。**不要用 `hasattr(item, 'rec_texts')`** — `rec_texts` 是 dict key，不是属性。检测 OCRResult: `isinstance(r[0], dict) and 'rec_texts' in r[0]`。 |
 | E24 | XHS MD 图片 wikilink 写成 `![[../img/...]]` → Obsidian 找不到图 | MD 文件在 `视频/` 目录下，图片在 `视频/img/{post_id}/` 下，是同级子目录。必须用 `![[img/{post_id}/01.jpg]]`，不能用 `../img/`（`../` 会跑到 `30.Resources/` 层，img 目录不在那里）。 |
+| E25 | S1 提取的 `__INITIAL_STATE__` note 数据中 `mediaV2` 字段不可靠（有时在 `note.video.media` 下，有时不存在）→ 字幕 URL 提取失败，反复搜索浪费回合 | `__INITIAL_STATE__` 和 SSR（`__SETUP_SERVER_STATE__`）是两套数据。SRT 字幕 URL 在 SSR 的 `mediaV2.subtitles` 中，但 S1 脚本只提取 `__INITIAL_STATE__`。**不要反复尝试从 note JSON 找字幕**——试一次 `media.get('mediaV2')`，不存在就立即走 S2 视频下载+Whisper 路线。9 分钟以内的视频用 Whisper tiny CPU 约 1-2 分钟，比反复搜字幕更快。 |
+| E26 | 微信文章 curl 抓取静态 HTML — 图片全部丢失（`data-src` 是 `').concat(r,'` JS 拼接） | 必须用 `browser_navigate` 打开文章，等 JS 渲染后再用 `browser_console` 提取：`document.querySelectorAll('img[src*=\"mmbiz.qpic.cn\"]')`。不要用 curl、requests、urllib 直接抓。图片去重用 `url.split('/')[-2]`（路径 hash ID）。 |
